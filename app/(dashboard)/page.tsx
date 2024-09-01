@@ -1,10 +1,13 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
+import { useNewAccount } from "@/features/account/hooks/use-new-accounts";
 
 export default function Home() {
+  const { onOpen } = useNewAccount();
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <Button variant="secondary">home page</Button>
-    </main>
+    <div className="">
+      <Button onClick={onOpen}>Add a account</Button>
+    </div>
   );
 }
