@@ -1,7 +1,8 @@
-import { Loader2, Navigation } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import HeaderLogo from "./header-logo";
 import { ClerkLoaded, ClerkLoading, UserButton } from "@clerk/nextjs";
 import WelcomeMsg from "./welcome-msg";
+import Navigation from "./navigation";
 
 const header = () => {
   return (
