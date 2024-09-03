@@ -1,7 +1,7 @@
 "use client";
 
-import EditAccountSheet from "@/features/account/components/edit-account-sheet";
-import NewAccountSheet from "@/features/account/components/new-account-sheet";
+import { EditAccountSheet } from "@/features/accounts/components/edit-account-sheet";
+import { NewAccountSheet } from "@/features/accounts/components/new-account-sheet";
 import { useMountedState } from "react-use";
 
 const SheetProvider = () => {

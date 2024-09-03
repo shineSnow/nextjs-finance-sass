@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -5,11 +7,10 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import { DialogTitle } from "@radix-ui/react-dialog";
-import { useState } from "react";
 
-const useConfirm = (
+export const useConfirm = (
   title: string,
   message: string
 ): [() => JSX.Element, () => Promise<unknown>] => {
@@ -17,11 +18,10 @@ const useConfirm = (
     resolve: (value: boolean) => void;
   } | null>(null);
 
-  const confirm = () => {
-    return new Promise((resolve) => {
+  const confirm = () =>
+    new Promise((resolve, reject) => {
       setPromise({ resolve });
     });
-  };
 
   const handleClose = () => {
     setPromise(null);
@@ -32,12 +32,12 @@ const useConfirm = (
     handleClose();
   };
 
-  const handleCancle = () => {
+  const handleCancel = () => {
     promise?.resolve(false);
     handleClose();
   };
 
-  const confirmationDialog = () => (
+  const ConfirmationDialog = () => (
     <Dialog open={promise !== null}>
       <DialogContent>
         <DialogHeader>
@@ -45,7 +45,7 @@ const useConfirm = (
           <DialogDescription>{message}</DialogDescription>
         </DialogHeader>
         <DialogFooter className="pt-2">
-          <Button variant="outline" onClick={handleCancle}>
+          <Button onClick={handleCancel} variant="outline">
             Cancel
           </Button>
           <Button onClick={handleConfirm}>Confirm</Button>
@@ -54,7 +54,5 @@ const useConfirm = (
     </Dialog>
   );
 
-  return [confirmationDialog, confirm];
+  return [ConfirmationDialog, confirm];
 };
-
-export default useConfirm;

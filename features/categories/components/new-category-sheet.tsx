@@ -1,6 +1,6 @@
 import { insertAccountSchema } from "@/db/schema";
 import { z } from "zod";
-import { useNewAccount } from "../../account/hooks/use-new-accounts";
+import { useNewAccount } from "../../accounts/hooks/use-new-account";
 
 const formSchema = insertAccountSchema.pick({ name: true });
 
