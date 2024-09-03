@@ -74,71 +74,75 @@ const TransactionsPage = () => {
         onCancleImport();
       },
     });
+  };
 
-    if (transactionQuery.isLoading) {
-      return (
-        <div className="">
-          <div className="">
-            <Card>
-              <CardHeader>
-                <Skeleton />
-              </CardHeader>
-              <CardContent>
-                <div className="">
-                  <Loader2 />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      );
-    }
-    if (variant === VARIANTS.IMPORT) {
-      return (
-        <>
-          <AccountDialog />
-          <ImportCard
-            data={importResults.data}
-            onCancel={onCancleImport}
-            onSubmit={onSubmitImport}
-          />
-        </>
-      );
-    }
-
+  if (transactionQuery.isLoading) {
     return (
-      <div className="max-screen-2xl mx-auto w-full pb-10 -mt-24">
-        <Card className="border-none drop-shadow-sm">
-          <CardHeader className="gap-y-2 lg:flex-row lg:items-center lg:justify-between">
-            <CardTitle className="text-xl line-clamp-1">
-              Transactions History
-            </CardTitle>
-            <div className="flex flex-col lg:flex-row gap-y-2 items-center gap-x-2">
-              <Button
-                onClick={newTransaction.onOpen}
-                size="sm"
-                className="w-full lg:w-auto"
-              >
-                <Plus className="size-4 mr-2" />
-                Add new
-              </Button>
-              <UploadButton onUpload={onUpload} />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <DataTable
-              columns={columns}
-              data={transactions}
-              filterKey="payee"
-              onDelete={(row) => {
-                const ids = row.map((r) => r.original.id);
-                deleteTransactions.mutate({ ids });
-              }}
-              disabled={isDisabled}
-            />
-          </CardContent>
-        </Card>
+      <div>
+        <div className="max-screen-2xl mx-auto w-full pb-10 -mt-24">
+          <Card className="border-none drop-shadow-sm">
+            <CardHeader>
+              <Skeleton className="h-8 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-[500px] w-full flex items-center justify-center">
+                <Loader2 className="size-6 text-slate-300 animate-spin" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
-  };
+  }
+  if (variant === VARIANTS.IMPORT) {
+    return (
+      <>
+        <AccountDialog />
+        <ImportCard
+          data={importResults.data}
+          onCancel={onCancleImport}
+          onSubmit={onSubmitImport}
+        />
+      </>
+    );
+  }
+
+  return (
+    <div className="max-screen-2xl mx-auto w-full pb-10 -mt-24">
+      <Card className="border-none drop-shadow-sm">
+        <CardHeader className="gap-y-2 lg:flex-row lg:items-center lg:justify-between">
+          <CardTitle className="text-xl line-clamp-1">
+            Transactions History
+          </CardTitle>
+          <div className="flex flex-col lg:flex-row gap-y-2 items-center gap-x-2">
+            <Button
+              onClick={newTransaction.onOpen}
+              size="sm"
+              className="w-full lg:w-auto"
+            >
+              <Plus className="size-4 mr-2" />
+              Add new
+            </Button>
+            <UploadButton onUpload={onUpload} />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            columns={columns}
+            data={transactions}
+            filterKey="payee"
+            onDelete={(row) => {
+              const ids = row
+                .map((r) => r.original.id)
+                .filter((id): id is string => id !== null);
+              deleteTransactions.mutate({ ids });
+            }}
+            disabled={isDisabled}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
+
+export default TransactionsPage;
