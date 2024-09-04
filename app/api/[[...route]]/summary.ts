@@ -1,13 +1,13 @@
-import { clerkMiddleware, getAuth } from "@hono/clerk-auth";
-import { zValidator } from "@hono/zod-validator";
-import { Hono } from "hono";
 import { z } from "zod";
-import { differenceInDays, parse, subDays } from "date-fns";
-import { db } from "@/db/drizzle";
+import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import { clerkMiddleware, getAuth } from "@hono/clerk-auth";
+import { subDays, parse, differenceInDays } from "date-fns";
 import { and, desc, eq, gte, lt, lte, sql, sum } from "drizzle-orm";
+
+import { db } from "@/db/drizzle";
 import { accounts, categories, transactions } from "@/db/schema";
 import { calculatePercentage, fillMissingDays } from "@/lib/utils";
-import { TramFront } from "lucide-react";
 
 const app = new Hono().get(
   "/",
@@ -22,11 +22,10 @@ const app = new Hono().get(
   ),
   async (c) => {
     const auth = getAuth(c);
-
     const { from, to, accountId } = c.req.valid("query");
 
     if (!auth?.userId) {
-      return c.json({ message: "Not authenticated" }, 401);
+      return c.json({ error: "Unauthorized" }, 401);
     }
 
     const defaultTo = new Date();
@@ -39,9 +38,7 @@ const app = new Hono().get(
     const endDate = to ? parse(to, "yyyy-MM-dd", new Date()) : defaultTo;
 
     const periodLength = differenceInDays(endDate, startDate) + 1;
-
     const lastPeriodStart = subDays(startDate, periodLength);
-
     const lastPeriodEnd = subDays(endDate, periodLength);
 
     async function fetchFinancialData(
@@ -78,7 +75,6 @@ const app = new Hono().get(
       startDate,
       endDate
     );
-
     const [lastPeriod] = await fetchFinancialData(
       auth.userId,
       lastPeriodStart,
@@ -89,7 +85,6 @@ const app = new Hono().get(
       currentPeriod.income,
       lastPeriod.income
     );
-
     const expensesChange = calculatePercentage(
       currentPeriod.expenses,
       lastPeriod.expenses
@@ -125,11 +120,12 @@ const app = new Hono().get(
       (sum, current) => sum + current.value,
       0
     );
-
     const finalCategories = topCategories;
-
     if (otherCategories.length > 0) {
-      finalCategories.push({ name: "Other", value: otherSum });
+      finalCategories.push({
+        name: "Other",
+        value: otherSum,
+      });
     }
 
     const activeDays = await db

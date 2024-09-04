@@ -1,18 +1,18 @@
+import { z } from "zod";
+import { Hono } from "hono";
+import { parse, subDays } from "date-fns";
+import { createId } from "@paralleldrive/cuid2";
+import { zValidator } from "@hono/zod-validator";
+import { clerkMiddleware, getAuth } from "@hono/clerk-auth";
+import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
+
 import { db } from "@/db/drizzle";
 import {
-  accounts,
-  categories,
-  insertTransactionSchema,
   transactions,
+  insertTransactionSchema,
+  categories,
+  accounts,
 } from "@/db/schema";
-import { clerkMiddleware, getAuth } from "@hono/clerk-auth";
-import { zValidator } from "@hono/zod-validator";
-import { createId } from "@paralleldrive/cuid2";
-import { error } from "console";
-import { parse, subDays } from "date-fns";
-import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
-import { Hono } from "hono";
-import { z } from "zod";
 
 const app = new Hono()
   .get(
@@ -31,12 +31,7 @@ const app = new Hono()
       const { from, to, accountId } = c.req.valid("query");
 
       if (!auth?.userId) {
-        return c.json(
-          {
-            error: "Unauthorized",
-          },
-          401
-        );
+        return c.json({ error: "Unauthorized" }, 401);
       }
 
       const defaultTo = new Date();
@@ -46,7 +41,7 @@ const app = new Hono()
         ? parse(from, "yyyy-MM-dd", new Date())
         : defaultFrom;
 
-      const endDate = to ? parse(to, "yyyy-MMM-dd", new Date()) : defaultTo;
+      const endDate = to ? parse(to, "yyyy-MM-dd", new Date()) : defaultTo;
 
       const data = await db
         .select({
@@ -78,28 +73,23 @@ const app = new Hono()
   )
   .get(
     "/:id",
-    zValidator("param", z.object({ id: z.string().optional() })),
+    zValidator(
+      "param",
+      z.object({
+        id: z.string().optional(),
+      })
+    ),
     clerkMiddleware(),
     async (c) => {
       const auth = getAuth(c);
       const { id } = c.req.valid("param");
 
       if (!id) {
-        return c.json(
-          {
-            error: "Missing id",
-          },
-          400
-        );
+        return c.json({ error: "Missing id" }, 400);
       }
 
       if (!auth?.userId) {
-        return c.json(
-          {
-            error: "Unauthorized",
-          },
-          401
-        );
+        return c.json({ error: "Unauthorized" }, 401);
       }
 
       const [data] = await db
@@ -118,12 +108,7 @@ const app = new Hono()
         .where(and(eq(transactions.id, id), eq(accounts.userId, auth.userId)));
 
       if (!data) {
-        return c.json(
-          {
-            error: "Not found",
-          },
-          404
-        );
+        return c.json({ error: "Not found" }, 404);
       }
 
       return c.json({ data });
@@ -132,23 +117,26 @@ const app = new Hono()
   .post(
     "/",
     clerkMiddleware(),
-    zValidator("json", insertTransactionSchema.omit({ id: true })),
+    zValidator(
+      "json",
+      insertTransactionSchema.omit({
+        id: true,
+      })
+    ),
     async (c) => {
       const auth = getAuth(c);
       const values = c.req.valid("json");
 
       if (!auth?.userId) {
-        return c.json(
-          {
-            error: "Unauthorized",
-          },
-          401
-        );
+        return c.json({ error: "Unauthorized" }, 401);
       }
 
       const [data] = await db
         .insert(transactions)
-        .values({ id: createId(), ...values })
+        .values({
+          id: createId(),
+          ...values,
+        })
         .returning();
 
       return c.json({ data });
@@ -157,23 +145,30 @@ const app = new Hono()
   .post(
     "/bulk-create",
     clerkMiddleware(),
-    zValidator("json", z.array(insertTransactionSchema.omit({ id: true }))),
+    zValidator(
+      "json",
+      z.array(
+        insertTransactionSchema.omit({
+          id: true,
+        })
+      )
+    ),
     async (c) => {
       const auth = getAuth(c);
       const values = c.req.valid("json");
 
       if (!auth?.userId) {
-        return c.json(
-          {
-            error: "Unauthorized",
-          },
-          401
-        );
+        return c.json({ error: "Unauthorized" }, 401);
       }
 
       const data = await db
         .insert(transactions)
-        .values(values.map((value) => ({ id: createId(), ...value })))
+        .values(
+          values.map((value) => ({
+            id: createId(),
+            ...value,
+          }))
+        )
         .returning();
 
       return c.json({ data });
@@ -182,18 +177,18 @@ const app = new Hono()
   .post(
     "/bulk-delete",
     clerkMiddleware(),
-    zValidator("json", z.object({ ids: z.array(z.string()) })),
+    zValidator(
+      "json",
+      z.object({
+        ids: z.array(z.string()),
+      })
+    ),
     async (c) => {
       const auth = getAuth(c);
       const values = c.req.valid("json");
 
       if (!auth?.userId) {
-        return c.json(
-          {
-            error: "Unauthorized",
-          },
-          401
-        );
+        return c.json({ error: "Unauthorized" }, 401);
       }
 
       const transactionsToDelete = db.$with("transactions_to_delete").as(
@@ -218,7 +213,9 @@ const app = new Hono()
             sql`(select id from ${transactionsToDelete})`
           )
         )
-        .returning({ id: transactions.id });
+        .returning({
+          id: transactions.id,
+        });
 
       return c.json({ data });
     }
@@ -226,29 +223,29 @@ const app = new Hono()
   .patch(
     "/:id",
     clerkMiddleware(),
-    zValidator("param", z.object({ id: z.string().optional() })),
-    zValidator("json", insertTransactionSchema.omit({ id: true })),
+    zValidator(
+      "param",
+      z.object({
+        id: z.string().optional(),
+      })
+    ),
+    zValidator(
+      "json",
+      insertTransactionSchema.omit({
+        id: true,
+      })
+    ),
     async (c) => {
       const auth = getAuth(c);
       const { id } = c.req.valid("param");
       const values = c.req.valid("json");
 
       if (!id) {
-        return c.json(
-          {
-            error: "Missing id",
-          },
-          400
-        );
+        return c.json({ error: "Missing id" }, 400);
       }
 
       if (!auth?.userId) {
-        return c.json(
-          {
-            error: "Unauthorized",
-          },
-          401
-        );
+        return c.json({ error: "Unauthorized" }, 401);
       }
 
       const transactionsToUpdate = db.$with("transactions_to_update").as(
@@ -272,12 +269,7 @@ const app = new Hono()
         .returning();
 
       if (!data) {
-        return c.json(
-          {
-            error: "Not found",
-          },
-          404
-        );
+        return c.json({ error: "Not found" }, 404);
       }
 
       return c.json({ data });
@@ -286,7 +278,12 @@ const app = new Hono()
   .delete(
     "/:id",
     clerkMiddleware(),
-    zValidator("param", z.object({ id: z.string().optional() })),
+    zValidator(
+      "param",
+      z.object({
+        id: z.string().optional(),
+      })
+    ),
     async (c) => {
       const auth = getAuth(c);
       const { id } = c.req.valid("param");
@@ -298,6 +295,7 @@ const app = new Hono()
       if (!auth?.userId) {
         return c.json({ error: "Unauthorized" }, 401);
       }
+
       const transactionsToDelete = db.$with("transactions_to_delete").as(
         db
           .select({ id: transactions.id })
@@ -315,7 +313,9 @@ const app = new Hono()
             sql`(select id from ${transactionsToDelete})`
           )
         )
-        .returning({ id: transactions.id });
+        .returning({
+          id: transactions.id,
+        });
 
       if (!data) {
         return c.json({ error: "Not found" }, 404);
