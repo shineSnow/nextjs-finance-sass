@@ -36,7 +36,6 @@ export const EditTransactionSheet = () => {
     "Are you sure?",
     "You are about to delete this transaction."
   );
-
   const transactionQuery = useGetTransaction(id);
   const editMutation = useEditTransaction(id);
   const deleteMutation = useDeleteTransaction(id);
@@ -114,6 +113,7 @@ export const EditTransactionSheet = () => {
         notes: "",
       };
 
+  console.log("defaultValues", defaultValues);
   return (
     <>
       <ConfirmDialog />
